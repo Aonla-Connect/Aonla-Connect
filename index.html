@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aonla Connect | Community Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .chat-bg { background-image: url('https://www.toptal.com/designers/subtlepatterns/uploads/double-bubble-outline.png'); }
+        .glass-header { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .ai-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex overflow-hidden">
+
+    <div id="auth-overlay" class="fixed inset-0 bg-indigo-900 z-50 flex items-center justify-center text-white p-6">
+        <div class="max-w-md text-center">
+            <h1 class="text-4xl font-bold mb-4">Aonla Connect</h1>
+            <p id="status-msg" class="mb-6 opacity-80">Verifying your location to keep the community local...</p>
+            <div id="auth-form" class="hidden space-y-4">
+                <input type="text" id="user-name" placeholder="Enter Your Real Name" class="w-full p-3 rounded-lg text-slate-900 outline-none">
+                <button onclick="startApp()" class="w-full bg-white text-indigo-900 font-bold py-3 rounded-lg hover:bg-indigo-100 transition">Join Community</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex w-full h-full">
+        <div class="w-80 bg-white border-r border-slate-200 flex flex-col shadow-2xl">
+            <div class="p-5 bg-indigo-600 text-white">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xl font-bold">Aonla Connect</span>
+                    <button class="hover:rotate-90 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div class="relative">
+                    <input type="text" placeholder="Search chats..." class="w-full bg-indigo-500/50 rounded-full py-2 pl-10 pr-4 text-sm placeholder-indigo-200 outline-none border border-indigo-400">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-indigo-200"></i>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-4 flex items-center gap-3 bg-indigo-50 border-r-4 border-indigo-600 cursor-pointer">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-city"></i></div>
+                    <div class="flex-1">
+                        <div class="flex justify-between"><span class="font-bold text-slate-800">Main Group</span><span class="text-[10px] text-slate-400">12:00</span></div>
+                        <p class="text-xs text-slate-500 truncate">Welcome to Aonla & Bareilly Hub!</p>
+                    </div>
+                </div>
+
+                <div class="p-4 flex items-center gap-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100">
+                    <div class="w-12 h-12 ai-gradient rounded-2xl flex items-center justify-center text-white shadow-md"><i class="fas fa-robot"></i></div>
+                    <div class="flex-1"><span class="font-bold text-slate-800">Jitarth AI</span><p class="text-[10px] text-green-500 font-bold uppercase tracking-tighter">Powered by Jitarth</p></div>
+                </div>
+
+                <div class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Private Groups</div>
+                <div id="private-groups-container">
+                    </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col relative">
+            <div class="h-16 glass-header border-b border-slate-200 flex items-center justify-between px-6 z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold">A</div>
+                    <div>
+                        <h2 class="font-bold text-slate-800 leading-tight">Aonla Connect (Main)</h2>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Public Community</p>
+                    </div>
+                </div>
+                <div class="flex gap-5 text-slate-400">
+                    <button class="hover:text-indigo-600"><i class="fas fa-phone-alt"></i></button>
+                    <button class="hover:text-indigo-600"><i class="fas fa-video"></i></button>
+                    <button class="hover:text-indigo-600" onclick="toggleReportMode()"><i class="fas fa-shield-alt"></i></button>
+                </div>
+            </div>
+
+            <div id="chat-window" class="flex-1 overflow-y-auto p-6 space-y-6 chat-bg bg-slate-50">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 ai-gradient rounded-lg flex items-center justify-center text-white text-[10px]"><i class="fas fa-robot"></i></div>
+                    <div class="ai-gradient text-white p-4 rounded-2xl rounded-tl-none shadow-lg max-w-md">
+                        <p class="text-xs opacity-80 font-bold mb-1">Jitarth AI</p>
+                        <p class="text-sm">Namaste Aonla! Main aapka digital assistant hoon. Mujhse koi bhi sawal poochne ke liye message mein <span class="underline font-bold">@jitarth</span> likhein.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white border-t border-slate-200">
+                <div id="file-preview" class="hidden p-2 bg-slate-50 rounded-t-xl border-x border-t flex items-center gap-3"></div>
+                <div class="flex items-center gap-3 bg-slate-100 rounded-2xl p-2 pr-3">
+                    <label class="cursor-pointer p-2 hover:bg-slate-200 rounded-full transition">
+                        <i class="fas fa-paperclip text-slate-500"></i>
+                        <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+                    </label>
+                    <input type="text" id="msg-input" placeholder="Type a message or @jitarth..." class="flex-1 bg-transparent outline-none text-sm p-2">
+                    <button class="text-slate-400 hover:text-indigo-600"><i class="fas fa-smile"></i></button>
+                    <button onclick="sendMessage()" class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-indigo-200 shadow-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // --- CONFIGURATION ---
+        const CLOUD_NAME = "dxwcy0y8n"; // Tera Cloud Name
+        const UPLOAD_PRESET = "aonla_connect"; // Jo tune abhi banaya
+        let currentUser = "";
+
+        // --- GEO-LOCATION CHECK ---
+        window.onload = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    // Approx Aonla/Bareilly range
+                    if(lat > 28.0 && lat < 28.6 && lon > 79.0 && lon < 79.6) {
+                        document.getElementById('status-msg').innerText = "Location Verified! Welcome, Neighbor.";
+                        document.getElementById('auth-form').classList.remove('hidden');
+                    } else {
+                        document.getElementById('status-msg').innerText = "Sorry! This app is only for Aonla & Bareilly residents.";
+                    }
+                }, () => {
+                    document.getElementById('status-msg').innerText = "Please enable Location Access to join.";
+                });
+            }
+        };
+
+        function startApp() {
+            const name = document.getElementById('user-name').value;
+            if(name) {
+                currentUser = name;
+                document.getElementById('auth-overlay').classList.add('hidden');
+            }
+        }
+
+        // --- FILE HANDLING & CLOUDINARY ---
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('file-preview');
+            preview.classList.remove('hidden');
+            preview.innerHTML = `<span class="text-xs font-bold text-indigo-600"><i class="fas fa-file"></i> ${file.name}</span>`;
+        }
+
+        async function uploadToCloudinary(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: formData });
+            return await res.json();
+        }
+
+        // --- SEND MESSAGE LOGIC ---
+        async function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const fileInput = document.getElementById('file-input');
+            const chatWindow = document.getElementById('chat-window');
+            
+            if(!input.value && !fileInput.files[0]) return;
+
+            let fileData = null;
+            if(fileInput.files[0]) {
+                fileData = await uploadToCloudinary(fileInput.files[0]);
+            }
+
+            // Create Message Bubble
+            const msgDiv = document.createElement('div');
+            msgDiv.className = "flex flex-row-reverse items-end gap-2";
+            
+            let content = `<div class="bg-indigo-600 text-white p-4 rounded-2xl rounded-br-none shadow-md max-w-md">`;
+            if(fileData) {
+                if(fileData.resource_type === 'image') {
+                    content += `<img src="${fileData.secure_url}" class="rounded-lg mb-2 max-w-full">`;
+                } else {
+                    content += `<div class="flex items-center gap-3 bg-white/20 p-2 rounded-lg mb-2">
+                                    <i class="fas fa-file-code text-2xl"></i>
+                                    <a href="${fileData.secure_url}" target="_blank" class="text-xs underline truncate">${fileInput.files[0].name}</a>
+                                </div>`;
+                }
+            }
+            content += `<p class="text-sm">${input.value}</p><span class="text-[9px] opacity-60 mt-1 block text-right">Just now</span></div>`;
+            
+            msgDiv.innerHTML = content;
+            chatWindow.appendChild(msgDiv);
+            
+            // Clear inputs
+            input.value = "";
+            fileInput.value = "";
+            document.getElementById('file-preview').classList.add('hidden');
+            chatWindow.scrollTo(0, chatWindow.scrollHeight);
+        }
+    </script>
+</body>
+</html>
